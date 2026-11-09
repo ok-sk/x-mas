@@ -64,6 +64,8 @@
             <div id="spinner" class="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <h2 id="loading-title" class="text-xl font-bold text-red-400 mb-2">クリスマスAR準備中...</h2>
             <p id="loading-desc" class="text-sm text-gray-300 max-w-xs mb-6">AIモデルを読み込んでいます。</p>
+            <!-- エラー表示用エリア -->
+            <div id="error-box" class="text-xs text-red-400 bg-red-950/50 p-3 rounded-lg max-w-sm mb-4 hidden"></div>
             <button id="start-btn" class="hidden px-8 py-3.5 bg-gradient-to-r from-red-600 to-emerald-600 hover:from-red-700 hover:to-emerald-700 text-white font-bold rounded-full shadow-lg shadow-red-500/40 transition transform active:scale-95 pointer-events-auto">
                 🎅 カメラを起動してスタート
             </button>
@@ -115,6 +117,7 @@
         const loadingOverlay = document.getElementById("loading-overlay");
         const loadingTitle = document.getElementById("loading-title");
         const loadingDesc = document.getElementById("loading-desc");
+        const errorBox = document.getElementById("error-box");
         const startBtn = document.getElementById("start-btn");
         const spinner = document.getElementById("spinner");
         const captureBtn = document.getElementById("capture-btn");
@@ -146,8 +149,10 @@
             } catch (error) {
                 console.error(error);
                 spinner.classList.add("hidden");
-                loadingTitle.textContent = "初期化エラー";
-                loadingDesc.textContent = "モデルの読み込みに失敗しました: " + error.message;
+                loadingTitle.textContent = "初期化エラーが発生しました";
+                loadingDesc.textContent = "以下のエラー内容をご確認ください：";
+                errorBox.textContent = error.toString() + " (スタック: " + (error.stack || "") + ")";
+                errorBox.classList.remove("hidden");
             }
         }
 
@@ -203,8 +208,10 @@
             } catch (err) {
                 console.error(err);
                 spinner.classList.add("hidden");
-                loadingTitle.textContent = "カメラアクセスエラー";
-                loadingDesc.textContent = "ブラウザのカメラ権限を確認してください: " + err.message;
+                loadingTitle.textContent = "カメラ起動エラー";
+                loadingDesc.textContent = "カメラを起動できませんでした：";
+                errorBox.textContent = err.toString();
+                errorBox.classList.remove("hidden");
                 startBtn.textContent = "🔄 もう一度試す";
                 startBtn.classList.remove("hidden");
             }
@@ -279,7 +286,6 @@
         }
         updateGingerbreadIcons();
 
-        // 角丸矩形を描画する互換性のあるヘルパー関数（スマホのクラッシュ防止）
         function drawRoundedRect(ctx, x, y, width, height, radius) {
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
@@ -295,7 +301,6 @@
             ctx.fill();
         }
 
-        // 1人分のARマスク描画関数
         function drawChristmasMask(landmarks) {
             const leftEar = landmarks[234];
             const rightEar = landmarks[454];
@@ -317,7 +322,6 @@
             ctx.rotate(angle);
 
             if (currentStyle === "santa") {
-                // --- サンタクロース ---
                 ctx.beginPath();
                 ctx.ellipse(0, radius * -0.08, radius * 0.7, radius * 0.7, 0, 0, Math.PI * 2);
 
@@ -328,7 +332,6 @@
                 ctx.fill("evenodd");
                 ctx.shadowBlur = 0;
 
-                // 2. 頭上の赤い三角帽子
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.55, -radius * 0.65);
                 ctx.lineTo(radius * 0.55, -radius * 0.65);
@@ -337,17 +340,14 @@
                 ctx.fillStyle = "#dc2626";
                 ctx.fill();
 
-                // 3. 帽子の白いファーふち（互換関数を使用）
                 ctx.fillStyle = "#ffffff";
                 drawRoundedRect(ctx, -radius * 0.55, -radius * 0.75, radius * 1.2, radius * 0.22, 12);
 
-                // 4. 帽子の白いポンポン
                 ctx.beginPath();
                 ctx.arc(radius * 0.25, -radius * 1.25, radius * 0.16, 0, Math.PI * 2);
                 ctx.fillStyle = "#ffffff";
                 ctx.fill();
 
-                // 5. 顎ひげ（逆三角形）
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.4, radius * 0.08 + holeH * 0.5);
@@ -357,7 +357,6 @@
                 ctx.fill();
 
             } else {
-                // --- トナカイ ---
                 ctx.beginPath();
                 ctx.ellipse(0, 0, radius * 0.9, radius * 0.8, 0, 0, Math.PI * 2);
                 const holeW = radius * 0.37;
@@ -370,13 +369,11 @@
                 ctx.fill("evenodd");
                 ctx.shadowBlur = 0;
 
-                // 2. トナカイの角
                 ctx.strokeStyle = "#78350f";
                 ctx.lineWidth = 16;
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
 
-                // 【左の角】
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.25, -radius * 0.75);
                 ctx.lineTo(-radius * 0.45, -radius * 1.25);
@@ -384,7 +381,6 @@
                 ctx.lineTo(-radius * 0.40, -radius * 1.05);
                 ctx.stroke();
 
-                // 【右の角】
                 ctx.beginPath();
                 ctx.moveTo(radius * 0.25, -radius * 0.75);
                 ctx.lineTo(radius * 0.45, -radius * 1.25);
@@ -392,7 +388,6 @@
                 ctx.lineTo(radius * 0.40, -radius * 1.05);
                 ctx.stroke();
 
-                // 3. トナカイの顔パーツ（耳）
                 ctx.fillStyle = "#C89460";
                 ctx.beginPath();
                 ctx.ellipse(-radius * 0.55, -radius * 0.65, radius * 0.16, radius * 0.28, -1.2, 0, Math.PI * 2);
@@ -401,21 +396,18 @@
                 ctx.ellipse(radius * 0.55, -radius * 0.65, radius * 0.16, radius * 0.28, 1.2, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 目（白目）
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(-radius * 0.28, -radius * 0.52, radius * 0.12, 0, Math.PI * 2);
                 ctx.arc(radius * 0.28, -radius * 0.52, radius * 0.12, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 黒目
                 ctx.fillStyle = "#000000";
                 ctx.beginPath();
                 ctx.arc(-radius * 0.28, -radius * 0.52, radius * 0.05, 0, Math.PI * 2);
                 ctx.arc(radius * 0.28, -radius * 0.52, radius * 0.05, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 真っ赤なお鼻
                 ctx.beginPath();
                 ctx.arc(0, -radius * 0.45, radius * 0.10, 0, Math.PI * 2);
                 ctx.fillStyle = "#ef4444";
@@ -428,7 +420,6 @@
             ctx.restore();
         }
 
-        // 写真撮影
         captureBtn.addEventListener("click", () => {
             flash.style.opacity = "1";
             setTimeout(() => { flash.style.opacity = "0"; }, 300);
