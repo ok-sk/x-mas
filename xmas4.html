@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>クリスマスAR - サンタ＆トナカイ（複数人対応）</title>
+    <title>クリスマスAR - サンタ＆トナカイ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- MediaPipe Face Landmarker & Camera Utils -->
@@ -64,8 +64,6 @@
             <div id="spinner" class="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <h2 id="loading-title" class="text-xl font-bold text-red-400 mb-2">クリスマスAR準備中...</h2>
             <p id="loading-desc" class="text-sm text-gray-300 max-w-xs mb-6">AIモデルを読み込んでいます。</p>
-            <!-- エラー表示用エリア -->
-            <div id="error-box" class="text-xs text-red-400 bg-red-950/50 p-3 rounded-lg max-w-sm mb-4 hidden"></div>
             <button id="start-btn" class="hidden px-8 py-3.5 bg-gradient-to-r from-red-600 to-emerald-600 hover:from-red-700 hover:to-emerald-700 text-white font-bold rounded-full shadow-lg shadow-red-500/40 transition transform active:scale-95 pointer-events-auto">
                 🎅 カメラを起動してスタート
             </button>
@@ -117,7 +115,6 @@
         const loadingOverlay = document.getElementById("loading-overlay");
         const loadingTitle = document.getElementById("loading-title");
         const loadingDesc = document.getElementById("loading-desc");
-        const errorBox = document.getElementById("error-box");
         const startBtn = document.getElementById("start-btn");
         const spinner = document.getElementById("spinner");
         const captureBtn = document.getElementById("capture-btn");
@@ -132,6 +129,7 @@
                 const filesetResolver = await FilesetResolver.forVisionTasks(
                     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
                 );
+                // ハロウィン版と同様に、1人用の軽量かつ安定した設定に戻しました
                 faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
                     baseOptions: {
                         modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
@@ -139,7 +137,7 @@
                     },
                     outputFaceBlendshapes: false,
                     runningMode: "VIDEO",
-                    numFaces: 3
+                    numFaces: 1
                 });
                 
                 spinner.classList.add("hidden");
@@ -149,10 +147,8 @@
             } catch (error) {
                 console.error(error);
                 spinner.classList.add("hidden");
-                loadingTitle.textContent = "初期化エラーが発生しました";
-                loadingDesc.textContent = "以下のエラー内容をご確認ください：";
-                errorBox.textContent = error.toString() + " (スタック: " + (error.stack || "") + ")";
-                errorBox.classList.remove("hidden");
+                loadingTitle.textContent = "初期化エラー";
+                loadingDesc.textContent = "モデルの読み込みに失敗しました。再読み込みしてください。";
             }
         }
 
@@ -183,9 +179,7 @@
             }
 
             if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
-                for (const landmarks of results.faceLandmarks) {
-                    drawChristmasMask(landmarks);
-                }
+                drawChristmasMask(results.faceLandmarks[0]);
             }
         }
 
@@ -208,10 +202,8 @@
             } catch (err) {
                 console.error(err);
                 spinner.classList.add("hidden");
-                loadingTitle.textContent = "カメラ起動エラー";
-                loadingDesc.textContent = "カメラを起動できませんでした：";
-                errorBox.textContent = err.toString();
-                errorBox.classList.remove("hidden");
+                loadingTitle.textContent = "カメラアクセスエラー";
+                loadingDesc.textContent = "ブラウザのカメラ権限を確認してください。";
                 startBtn.textContent = "🔄 もう一度試す";
                 startBtn.classList.remove("hidden");
             }
