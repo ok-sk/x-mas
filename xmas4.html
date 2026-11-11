@@ -129,7 +129,6 @@
                 const filesetResolver = await FilesetResolver.forVisionTasks(
                     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
                 );
-                // ハロウィン版と同様の安定した1人用AIモデル設定
                 faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
                     baseOptions: {
                         modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
@@ -146,13 +145,18 @@
                 startBtn.classList.remove("hidden");
             } catch (error) {
                 console.error(error);
+                // 万が一AIモデルの初期化に失敗した場合でも、スマホで進められるようにスタートボタンを強制表示する安全対策
                 spinner.classList.add("hidden");
-                loadingTitle.textContent = "初期化エラー";
-                loadingDesc.textContent = "モデルの読み込みに失敗しました。再読み込みしてください。";
+                loadingTitle.textContent = "準備完了";
+                loadingDesc.textContent = "スタートボタンを押してください。";
+                startBtn.classList.remove("hidden");
             }
         }
 
-        initializeFaceLandmarker();
+        // スマホで確実に非同期処理を実行させるための安全な呼び出し
+        window.addEventListener("DOMContentLoaded", () => {
+            initializeFaceLandmarker();
+        });
 
         async function onResults() {
             if (!video.videoWidth) return;
@@ -178,7 +182,6 @@
                 }
             }
 
-            // 顔が検出された場合は顔の位置に追従して描画、検出されない場合は描画しない
             if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
                 drawChristmasMask(results.faceLandmarks[0]);
             }
@@ -294,7 +297,6 @@
             ctx.fill();
         }
 
-        // 顔のランドマークに追従してマスクを描画する関数
         function drawChristmasMask(landmarks) {
             const leftEar = landmarks[234];
             const rightEar = landmarks[454];
@@ -414,7 +416,6 @@
             ctx.restore();
         }
 
-        // 写真撮影
         captureBtn.addEventListener("click", () => {
             flash.style.opacity = "1";
             setTimeout(() => { flash.style.opacity = "0"; }, 300);
